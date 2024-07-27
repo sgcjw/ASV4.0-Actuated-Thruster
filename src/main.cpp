@@ -44,14 +44,19 @@ void setup() {
  
   driver.pwm_autoscale(true);    // Needed for stealthChop AT
   driver.pwm_autograd(true);     // Helpful for stealthChop AT
-  //driver.en_spreadCycle(true);   // Enable SpreadCycle mode, only for TMC2209
  
   grabber_talk();
  
   driver.pwm_freq(1);         // This is the default value? (%01) 
- 
-  //driver.SGTHRS(250);   // Set stall detection threshold, only for TMC2209
-
+  driver.RAMPMODE(0);
+  driver.VSTART();
+  driver.v1();
+  driver.VMAX();
+  driver.VSTOP();
+  driver.a1();
+  driver.AMAX();
+  driver.DMAX();
+  driver.d1();
 
 }
 
@@ -78,7 +83,7 @@ void setup() {
 //   }
 // }
 
-// testing, to take out 
+// checking connection
 void grabber_talk()
 {
   auto versionG = driver.version();
@@ -109,54 +114,6 @@ void grabber_talk()
 
 
 void loop() {
-  // uint16_t msread = driver.microsteps();
-  // Serial.print(F("Read microsteps via UART to test UART receive : "));
-  // Serial.println(msread);
-  
-  //driver.VACTUAL();
-  //Serial.println(driver.VACTUAL());
-    for (long i = 7500; i >=0; i = i - 2*accel){              // increase speed to zero
-    //driver.VACTUAL();
-    Serial.println((signed) driver.VACTUAL());
-    // Serial << TMCdriver.VACTUAL() << endl;
-    delay(200);
-  }
-
-  //driver.VACTUAL();
-     for (long i = -7500; i <=0; i = i + 2*accel){              // Decrease speed to zero
-     //driver.VACTUAL(i);
-     Serial.println((signed) driver.VACTUAL());
-     // Serial << TMCdriver.VACTUAL() << endl;
-     delay(200);
-  }
-  
-  // if (driver.VACTUAL() < vTarget)
-  //  {
-  //    vActual = driver.VACTUAL() + 2*accel;
-  //    driver.VACTUAL(vActual);
-  //  }
-  //  else
-  //  {
-  //    Serial.println("Max speed");
-  //  }
-
-  //Serial.println(driver.SG_RESULT());
-
-  //  delay(200); // Delay for motor to run at constant velocity
-
-  //  for (long i = 0; i <= vTarget; i = i + 2*accel){             // Speed up to maxSpeed
-  //    driver.VACTUAL(i);                                     // Set motor speed
-  //    // Serial << TMCdriver.VACTUAL() << endl;
-  //    delay(200);
-  //  }
-  
-  //  for (long i = vTarget; i >=0; i = i - 2*accel){              // Decrease speed to zero
-  //    driver.VACTUAL(i);
-  //    // Serial << TMCdriver.VACTUAL() << endl;
-  //    delay(200);
-  //  }   
-
-  //shaft = !shaft;
-  //driver.shaft(shaft);
+  driver.XTARGET(10000);
 }
 
