@@ -1,0 +1,1 @@
+void grabber_talk(void);
