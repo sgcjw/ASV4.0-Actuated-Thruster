@@ -3,9 +3,9 @@
 
 
 #define SERIAL_PORT Serial1 // HardwareSerial port 
-#define DRIVER_ADDRESS 0b00 // TMC2209 Driver address according to MS1 and MS2
+#define DRIVER_ADDRESS 0b11111110 // TMC5160 Driver address according to NAI/NAO pins
 
-#define R_SENSE 0.11f // Match to your driver
+#define R_SENSE 0.075f // Match to your driver
                       // SilentStepStick series use 0.11
                       // UltiMachine Einsy and Archim2 boards use 0.2
                       // Panucatt BSD2660 uses 0.1
@@ -18,10 +18,10 @@ long accel = 50;
 long vActual = 0;
 int microstep = 1;
 
-TMC2209Stepper driver(&SERIAL_PORT, R_SENSE, DRIVER_ADDRESS);
+TMC5160Stepper driver(&SERIAL_PORT, R_SENSE, DRIVER_ADDRESS);
 
 void setup() {
-  SERIAL_PORT.begin(115200);      // INITIALIZE UART to TMC2209
+  SERIAL_PORT.begin(115200);      // INITIALIZE UART to TMC5160
   Serial.begin(115200);
   delay(500);
   Serial.println(F("Serial Initialized"));
@@ -44,38 +44,39 @@ void setup() {
  
   driver.pwm_autoscale(true);    // Needed for stealthChop AT
   driver.pwm_autograd(true);     // Helpful for stealthChop AT
-  driver.en_spreadCycle(true);   // Enable SpreadCycle mode 
+  //driver.en_spreadCycle(true);   // Enable SpreadCycle mode, only for TMC2209
  
   grabber_talk();
  
   driver.pwm_freq(1);         // This is the default value? (%01) 
  
-  driver.SGTHRS(250);   // Set stall detection threshold 
+  //driver.SGTHRS(250);   // Set stall detection threshold, only for TMC2209
 
 
 }
 
-void stall_guard(int stall_value)
-{
-  // different stall value based on closing or opening 
-  static uint32_t last_time = 0;
-  uint32_t ms = millis();
+// This function now only applicable to TMC2209, can try if have TMC5160 version
+// void stall_guard(int stall_value) 
+// {
+//   // different stall value based on closing or opening 
+//   static uint32_t last_time = 0;
+//   uint32_t ms = millis();
  
-  if ((ms - last_time) > 100 && driver.VACTUAL() != 0) { // run every 0.1s
-    last_time = ms;
+//   if ((ms - last_time) > 100 && driver.VACTUAL() != 0) { // run every 0.1s
+//     last_time = ms;
  
-    int load = (int) driver.SG_RESULT();
-#ifdef BB_DEBUG
-    Serial.print("Status: ");
-    Serial.println(load);
-#endif // BB DEBUG
-    if (load && load < stall_value)
-    {
-      driver.VACTUAL(0);
-      Serial.println("Stall detected");
-    }
-  }
-}
+//     int load = (int) driver.SG_RESULT(); 
+// #ifdef BB_DEBUG
+//     Serial.print("Status: ");
+//     Serial.println(load);
+// #endif // BB DEBUG
+//     if (load && load < stall_value)
+//     {
+//       //driver.VACTUAL(0);
+//       Serial.println("Stall detected");
+//     }
+//   }
+// }
 
 // testing, to take out 
 void grabber_talk()
@@ -112,18 +113,18 @@ void loop() {
   // Serial.print(F("Read microsteps via UART to test UART receive : "));
   // Serial.println(msread);
   
-  driver.VACTUAL(7500);
+  //driver.VACTUAL();
   //Serial.println(driver.VACTUAL());
     for (long i = 7500; i >=0; i = i - 2*accel){              // increase speed to zero
-    driver.VACTUAL(i);
+    //driver.VACTUAL();
     Serial.println((signed) driver.VACTUAL());
     // Serial << TMCdriver.VACTUAL() << endl;
     delay(200);
   }
 
-  driver.VACTUAL(-7500);
+  //driver.VACTUAL();
      for (long i = -7500; i <=0; i = i + 2*accel){              // Decrease speed to zero
-     driver.VACTUAL(i);
+     //driver.VACTUAL(i);
      Serial.println((signed) driver.VACTUAL());
      // Serial << TMCdriver.VACTUAL() << endl;
      delay(200);
