@@ -3,7 +3,7 @@
 
 
 #define SERIAL_PORT Serial1 // HardwareSerial port 
-#define DRIVER_ADDRESS 0b11111110 // TMC5160 Driver address according to NAI/NAO pins
+#define DRIVER_ADDRESS 0 // TMC5160 Driver address according to NAI/NAO pins
 
 #define R_SENSE 0.075f // Match to your driver
                       // SilentStepStick series use 0.11
@@ -49,14 +49,14 @@ void setup() {
  
   driver.pwm_freq(1);         // This is the default value? (%01) 
   driver.RAMPMODE(0);
-  driver.VSTART();
-  driver.v1();
-  driver.VMAX();
-  driver.VSTOP();
-  driver.a1();
-  driver.AMAX();
-  driver.DMAX();
-  driver.d1();
+  driver.VSTART(0);
+  driver.v1(0);
+  driver.VMAX(5000);
+  driver.VSTOP(0);
+  driver.a1(50);
+  driver.AMAX(50);
+  driver.DMAX(50);
+  driver.d1(50);
 
 }
 
