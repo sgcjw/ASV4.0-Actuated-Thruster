@@ -1,119 +1,69 @@
-#include <TMCStepper.h>
-#include <motor.h>
+#include <Arduino.h>
+#include <TMC5160.h>
 
+const uint8_t UART_TX_EN_PIN = 5;   // Differential transceiver TX enable pin
+const uint32_t UART_BAUDRATE = 115200; // UART baudrate : up to 750kbps with default TMC5160 clock
 
-#define SERIAL_PORT Serial1 // HardwareSerial port 
-#define DRIVER_ADDRESS 0 // TMC5160 Driver address according to NAI/NAO pins
-
-#define R_SENSE 0.075f // Match to your driver
-                      // SilentStepStick series use 0.11
-                      // UltiMachine Einsy and Archim2 boards use 0.2
-                      // Panucatt BSD2660 uses 0.1
-                      // Watterott TMC5160 uses 0.075
-
-bool shaft = 0;   // ONLY NEEDED FOR CHANGING DIRECTION VIA UART, NO NEED FOR DIR PIN FOR THIS
-int STALL_VALUE = 5;
-unsigned long vTarget = 2000;
-long accel = 50;
-long vActual = 0;
-int microstep = 1;
-
-TMC5160Stepper driver(&SERIAL_PORT, R_SENSE, DRIVER_ADDRESS);
+TMC5160_UART_Transceiver motor = TMC5160_UART_Transceiver(UART_TX_EN_PIN, Serial1, 0, UART_BAUDRATE); //Use Serial 1 ; address 0 (NAI LOW)
 
 void setup() {
-  SERIAL_PORT.begin(115200);      // INITIALIZE UART to TMC5160
+  // USB/debug serial coms
   Serial.begin(115200);
-  delay(500);
-  Serial.println(F("Serial Initialized"));
 
-  driver.begin();                // Initialize driver 
- 
-  driver.toff(3);                // Enables driver in software 
-  driver.tbl(2);                 // Adjusts blanking time 
-  driver.hend(0);                // Adjusts hysteresis end effective value to -3 
-  // driver.hstrt(4);               // Adjusts hysteresis minimum value to 1, so overall is -3+4=1 
-  driver.hstrt(0);             // Recommended hysteresis minimum value for spreadCycle 
- 
-  driver.TPWMTHRS(1);
- 
-  driver.rms_current(1000);       // Set motor RMS current in mA, 1000 for thruster rotating/1500 for thruster up and down
-  Serial.print("RMS Current has been set to:");
-  Serial.println(driver.rms_current());
- 
-  driver.microsteps(microstep);        // Set microsteps to 1/256 
- 
-  driver.pwm_autoscale(true);    // Needed for stealthChop AT
-  driver.pwm_autograd(true);     // Helpful for stealthChop AT
- 
-  grabber_talk();
- 
-  driver.pwm_freq(1);         // This is the default value? (%01) 
-  driver.RAMPMODE(0);
-  driver.VSTART(0);
-  driver.v1(0);
-  driver.VMAX(5000);
-  driver.VSTOP(0);
-  driver.a1(50);
-  driver.AMAX(50);
-  driver.DMAX(50);
-  driver.d1(50);
+  // Init TMC serial bus @ 250kbps
+  Serial1.begin(115200);
+  Serial1.setTimeout(5); // TMC5130 should answer back immediately when reading a register.
 
+  // status LED
+  pinMode(LED_BUILTIN, OUTPUT);
+
+   // This sets the motor & driver parameters /!\ run the configWizard for your driver and motor for fine tuning !
+  TMC5160::PowerStageParameters powerStageParams; // defaults.
+  TMC5160::MotorParameters motorParams;
+  motorParams.globalScaler = 98; // Adapt to your driver and motor (check TMC5160 datasheet - "Selecting sense resistors")
+  motorParams.irun = 31;
+  motorParams.ihold = 16;
+
+  motor.begin(powerStageParams, motorParams, TMC5160::NORMAL_MOTOR_DIRECTION);
+
+  // ramp definition
+  motor.setRampMode(TMC5160::POSITIONING_MODE);
+  motor.setMaxSpeed(400);
+  motor.setAcceleration(500);
+
+  Serial.println("starting up");
 }
 
-// This function now only applicable to TMC2209, can try if have TMC5160 version
-// void stall_guard(int stall_value) 
-// {
-//   // different stall value based on closing or opening 
-//   static uint32_t last_time = 0;
-//   uint32_t ms = millis();
- 
-//   if ((ms - last_time) > 100 && driver.VACTUAL() != 0) { // run every 0.1s
-//     last_time = ms;
- 
-//     int load = (int) driver.SG_RESULT(); 
-// #ifdef BB_DEBUG
-//     Serial.print("Status: ");
-//     Serial.println(load);
-// #endif // BB DEBUG
-//     if (load && load < stall_value)
-//     {
-//       //driver.VACTUAL(0);
-//       Serial.println("Stall detected");
-//     }
-//   }
-// }
 
 // checking connection
-void grabber_talk()
+void loop()
 {
-  auto versionG = driver.version();
-  if (versionG == 0x21) {
-    Serial.println("Grabber talking through UART.");
+  uint32_t now = millis();
+  static unsigned long t_dirchange, t_echo;
+  static bool dir;
+
+  // every n seconds or so...
+  if ( now - t_dirchange > 3000 )
+  {
+    t_dirchange = now;
+
+    // reverse direction
+    dir = !dir;
+    motor.setTargetPosition(dir ? 200 : 0);  // 1 full rotation = 200s/rev
   }
-  else {
-    Serial.print("\nTesting connection...");
-    uint8_t result = driver.test_connection();
-    if (result) {
-      Serial.println("failed!");
-      Serial.print("Likely cause: ");
 
-      switch (result) {
-        case 1:
-          Serial.println("loose connection");
-          break;
-        case 2:
-          Serial.println("no power");
-          break;
-      }
-    }
-    else {
-      Serial.println("UART not working, unknown error.");
-    }
+  // print out current position
+  if( now - t_echo > 100 )
+  {
+    t_echo = now;
+
+    // get the current target position
+    float xactual = motor.getCurrentPosition();
+    float vactual = motor.getCurrentSpeed();
+    Serial.print("current position : ");
+    Serial.print(xactual);
+    Serial.print("\tcurrent speed : ");
+    Serial.println(vactual);
   }
-}
-
-
-void loop() {
-  driver.XTARGET(10000);
 }
 
