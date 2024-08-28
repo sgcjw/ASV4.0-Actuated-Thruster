@@ -21,14 +21,14 @@ void setup() {
   TMC5160::PowerStageParameters powerStageParams; // defaults.
   TMC5160::MotorParameters motorParams;
   motorParams.globalScaler = 98; // Adapt to your driver and motor (check TMC5160 datasheet - "Selecting sense resistors")
-  motorParams.irun = 31;
-  motorParams.ihold = 16;
+  motorParams.irun = 16;
+  motorParams.ihold = 8;
 
   motor.begin(powerStageParams, motorParams, TMC5160::NORMAL_MOTOR_DIRECTION);
 
   // ramp definition
   motor.setRampMode(TMC5160::POSITIONING_MODE);
-  motor.setMaxSpeed(400);
+  motor.setMaxSpeed(4000);
   motor.setAcceleration(500);
 
   Serial.println("starting up");
@@ -42,18 +42,18 @@ void loop()
   static unsigned long t_dirchange, t_echo;
   static bool dir;
 
-  // every n seconds or so...
+  // every 3000 seconds or so...
   if ( now - t_dirchange > 3000 )
   {
     t_dirchange = now;
 
     // reverse direction
-    dir = !dir;
+    dir = !dir; 
     motor.setTargetPosition(dir ? 200 : 0);  // 1 full rotation = 200s/rev
   }
 
-  // print out current position
-  if( now - t_echo > 100 )
+  // print out current position every 500ms
+  if( now - t_echo > 500 )
   {
     t_echo = now;
 
