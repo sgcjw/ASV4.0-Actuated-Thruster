@@ -2,7 +2,7 @@
 #include <motor.h>
 
 
-#define SERIAL_PORT Serial1 // HardwareSerial port 
+#define SERIAL_PORT Serial // HardwareSerial port 
 #define DRIVER_ADDRESS 0b00 // TMC2209 Driver address according to MS1 and MS2
 
 #define R_SENSE 0.11f // Match to your driver
@@ -14,7 +14,7 @@
 bool shaft = 0;   // ONLY NEEDED FOR CHANGING DIRECTION VIA UART, NO NEED FOR DIR PIN FOR THIS
 int STALL_VALUE = 5;
 unsigned long vTarget = 2000;
-long accel = 50;
+long accel = 100;
 long vActual = 0;
 int microstep = 1;
 
@@ -36,7 +36,7 @@ void setup() {
  
   driver.TPWMTHRS(1);
  
-  driver.rms_current(1000);       // Set motor RMS current in mA, 1000 for thruster rotating/1500 for thruster up and down
+  driver.rms_current(3000);       // Set motor RMS current in mA, 1000 for thruster rotating/1500 for thruster up and down
   Serial.print("RMS Current has been set to:");
   Serial.println(driver.rms_current());
  
@@ -50,7 +50,7 @@ void setup() {
  
   driver.pwm_freq(1);         // This is the default value? (%01) 
  
-  driver.SGTHRS(250);   // Set stall detection threshold 
+  driver.SGTHRS(2500);   // Set stall detection threshold 
 
 
 }
@@ -112,22 +112,22 @@ void loop() {
   // Serial.print(F("Read microsteps via UART to test UART receive : "));
   // Serial.println(msread);
   
-  driver.VACTUAL(7500);
+  driver.VACTUAL(-3000);
   //Serial.println(driver.VACTUAL());
-    for (long i = 7500; i >=0; i = i - 2*accel){              // increase speed to zero
-    driver.VACTUAL(i);
-    Serial.println((signed) driver.VACTUAL());
-    // Serial << TMCdriver.VACTUAL() << endl;
-    delay(200);
-  }
+  //   for (long i = 0; i <=1000; i = i + 2*accel){              // increase speed to zero
+  //   driver.VACTUAL(i);
+  //   Serial.println((signed) driver.VACTUAL());
+  //   // Serial << TMCdriver.VACTUAL() << endl;
+  //   delay(200);
+  // }
 
-  driver.VACTUAL(-7500);
-     for (long i = -7500; i <=0; i = i + 2*accel){              // Decrease speed to zero
-     driver.VACTUAL(i);
-     Serial.println((signed) driver.VACTUAL());
-     // Serial << TMCdriver.VACTUAL() << endl;
-     delay(200);
-  }
+  // driver.VACTUAL(-1500);
+  //    for (long i = -1500; i <=0; i = i + 2*accel){              // Decrease speed to zero
+  //    driver.VACTUAL(i);
+  //    Serial.println((signed) driver.VACTUAL());
+  //    // Serial << TMCdriver.VACTUAL() << endl;
+  //    delay(200);
+  // }
   
   // if (driver.VACTUAL() < vTarget)
   //  {
